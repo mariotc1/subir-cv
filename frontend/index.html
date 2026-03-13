@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <title>CV Nexus - Secure Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 style="font-family: 'Rajdhani', sans-serif;">CV NEXUS</h1>
+            <nav id="nav-menu" class="hidden">
+                <span id="user-email"></span>
+                <button id="logout-btn" class="btn btn-secondary">Cerrar Sesión</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Auth Section -->
+            <section id="auth-section">
+                <div class="tabs">
+                    <button class="tab active" data-tab="login">Acceso</button>
+                    <button class="tab" data-tab="register">Registro</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="form">
+                    <div class="form-group">
+                        <label for="login-email">Correo Electrónico</label>
+                        <input type="email" id="login-email" required placeholder="tu@email.com" autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Contraseña</label>
+                        <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Ingresar al Sistema</button>
+                    <div id="login-error" class="error hidden"></div>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" class="form hidden">
+                    <div class="form-group">
+                        <label for="register-email">Correo Electrónico</label>
+                        <input type="email" id="register-email" required placeholder="tu@email.com" autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Contraseña</label>
+                        <input type="password" id="register-password" required placeholder="••••••••" autocomplete="new-password">
+                        <small class="hint">
+                            Seguridad: Mín. 12 caracteres, incluye mayúsculas, números y símbolos.
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password-confirm">Confirmar Contraseña</label>
+                        <input type="password" id="register-password-confirm" required placeholder="••••••••" autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Crear Cuenta</button>
+                    <div id="register-error" class="error hidden"></div>
+                    <div id="register-success" class="success hidden"></div>
+                </form>
+            </section>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="hidden">
+                <div class="card">
+                    <h2 style="font-family: 'Rajdhani', sans-serif; text-transform: uppercase; letter-spacing: 2px;">Mi Repositorio CV</h2>
+
+                    <!-- CV Info -->
+                    <div id="cv-info" class="hidden">
+                        <p><strong>Archivo Detectado:</strong> <span id="cv-filename"></span></p>
+                        <p><strong>Fecha de Sincronización:</strong> <span id="cv-date"></span></p>
+                        <div class="btn-group">
+                            <button id="download-cv-btn" class="btn btn-primary">Descargar Documento</button>
+                            <button id="delete-cv-btn" class="btn btn-danger">Eliminar Registro</button>
+                        </div>
+                    </div>
+
+                    <div id="no-cv" class="hidden">
+                        <p>No se han encontrado documentos vinculados a su perfil.</p>
+                    </div>
+
+                    <!-- Upload Form -->
+                    <div class="upload-section">
+                        <h3 style="font-family: 'Rajdhani', sans-serif; text-transform: uppercase;">Actualizar Documento</h3>
+                        <form id="upload-form" class="form" style="background: transparent; padding: 0; box-shadow: none; border: none; backdrop-filter: none;">
+                            <div class="form-group">
+                                <label for="cv-file">Seleccionar PDF (Máx. 5.0 MB)</label>
+                                <input type="file" id="cv-file" accept=".pdf" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Subir y Encriptar</button>
+                        </form>
+                        <div id="upload-error" class="error hidden"></div>
+                        <div id="upload-success" class="success hidden"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 CV NEXUS - Security Protocols Active</p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

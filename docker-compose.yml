@@ -1,0 +1,60 @@
+services:
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:16-alpine
+    container_name: cvapp_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cvapp
+      POSTGRES_PASSWORD: cvapp_secure_password
+      POSTGRES_DB: cvapp
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cvapp_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cvapp -d cvapp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # No exponer puerto al host (solo accesible internamente)
+    # ports:
+    #   - "5432:5432"
+
+  # Backend FastAPI
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cvapp_backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://cvapp:cvapp_secure_password@db:5432/cvapp
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change_this_in_production_to_a_very_long_random_string}
+      - DEBUG=false
+      - UPLOAD_DIR=/app/storage/cvs
+    volumes:
+      - cv_storage:/app/storage/cvs
+    ports:
+      - "8000:8000"
+    networks:
+      - cvapp_network
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  cvapp_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  cv_storage:
+    driver: local
