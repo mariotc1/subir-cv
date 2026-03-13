@@ -15,18 +15,21 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # Content Security Policy - Previene XSS
+        # Permite blob: para visualización previa de PDFs
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "img-src 'self' data:; "
-            "font-src 'self'; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "frame-src 'self' blob:; "
+            "object-src 'self' blob:; "
             "frame-ancestors 'none'; "
             "form-action 'self'"
         )
 
-        # Previene clickjacking
-        response.headers["X-Frame-Options"] = "DENY"
+        # Permite frames solo del mismo origen para el visor de PDF
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
 
         # Previene MIME type sniffing
         response.headers["X-Content-Type-Options"] = "nosniff"

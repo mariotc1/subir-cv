@@ -53,7 +53,14 @@ const elements = {
     uploadError: document.getElementById('upload-error'),
     uploadSuccess: document.getElementById('upload-success'),
     downloadCvBtn: document.getElementById('download-cv-btn'),
-    deleteCvBtn: document.getElementById('delete-cv-btn')
+    deleteCvBtn: document.getElementById('delete-cv-btn'),
+    // Preview Elements
+    dropZone: document.getElementById('drop-zone'),
+    dropContent: document.getElementById('drop-content'),
+    filePreview: document.getElementById('file-preview'),
+    previewFilename: document.getElementById('preview-filename'),
+    pdfViewer: document.getElementById('pdf-preview-viewer'),
+    removeFileBtn: document.getElementById('remove-file-btn')
 };
 
 // API Base URL
@@ -242,6 +249,16 @@ async function deleteCV() {
 }
 
 // UI Helper Functions
+function resetUploadUI() {
+    if (elements.filePreview) {
+        elements.filePreview.classList.add('hidden');
+        elements.dropContent.classList.remove('hidden');
+        if (elements.pdfViewer) elements.pdfViewer.src = '';
+        const fileInput = document.getElementById('cv-file');
+        if (fileInput) fileInput.value = '';
+    }
+}
+
 function clearCVDisplay() {
     elements.cvFilename.textContent = '';
     elements.cvDate.textContent = '';
@@ -252,6 +269,19 @@ function clearCVDisplay() {
 function clearAllForms() {
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => input.value = '');
+    
+    // Resetear botones de envío a su estado original
+    const loginBtn = elements.loginForm.querySelector('button[type="submit"]');
+    if (loginBtn) {
+        loginBtn.textContent = 'Ingresar al Sistema';
+        loginBtn.disabled = false;
+    }
+    
+    const registerBtn = elements.registerForm.querySelector('button[type="submit"]');
+    if (registerBtn) {
+        registerBtn.textContent = 'Crear Cuenta';
+        registerBtn.disabled = false;
+    }
 }
 
 function clearAllMessages() {
@@ -260,6 +290,9 @@ function clearAllMessages() {
     hideError(elements.uploadError);
     hideSuccess(elements.registerSuccess);
     hideSuccess(elements.uploadSuccess);
+    
+    // Reset preview
+    resetUploadUI();
 }
 
 // UI Functions
@@ -304,6 +337,69 @@ function switchTab(tabName) {
 elements.tabs.forEach(tab => {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
 });
+
+// Drag and Drop & Preview Logic
+const cvFileInput = document.getElementById('cv-file');
+
+function handleFileSelect(file) {
+    if (file && file.type === 'application/pdf') {
+        elements.previewFilename.textContent = sanitizeHTML(file.name);
+        
+        // Crear URL para el visor
+        const fileURL = URL.createObjectURL(file);
+        elements.pdfViewer.src = fileURL;
+        
+        elements.dropContent.classList.add('hidden');
+        elements.filePreview.classList.remove('hidden');
+        hideError(elements.uploadError);
+    } else if (file) {
+        showError(elements.uploadError, 'Por favor, selecciona un archivo PDF válido.');
+        resetUploadUI();
+    }
+}
+
+if (cvFileInput) {
+    cvFileInput.addEventListener('change', (e) => {
+        handleFileSelect(e.target.files[0]);
+    });
+}
+
+if (elements.dropZone) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        elements.dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        elements.dropZone.addEventListener(eventName, () => {
+            elements.dropZone.classList.add('dragover');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        elements.dropZone.addEventListener(eventName, () => {
+            elements.dropZone.classList.remove('dragover');
+        }, false);
+    });
+
+    elements.dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const file = dt.files[0];
+        if (file) {
+            cvFileInput.files = dt.files; // Sincronizar con el input
+            handleFileSelect(file);
+        }
+    });
+}
+
+if (elements.removeFileBtn) {
+    elements.removeFileBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        resetUploadUI();
+    });
+}
 
 elements.loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -360,26 +456,26 @@ elements.uploadForm.addEventListener('submit', async (e) => {
     hideError(elements.uploadError);
     hideSuccess(elements.uploadSuccess);
 
-    const fileInput = document.getElementById('cv-file');
-    const file = fileInput.files[0];
+    const file = cvFileInput.files[0];
 
     if (!file) {
         showError(elements.uploadError, 'Seleccione un archivo válido.');
         return;
     }
 
-    const btn = elements.uploadForm.querySelector('button');
+    const btn = elements.uploadForm.querySelector('button[type="submit"]');
+    const originalText = btn.textContent;
     btn.textContent = 'Encriptando y Subiendo...';
     btn.disabled = true;
 
     try {
         await uploadCV(file);
         showSuccess(elements.uploadSuccess, 'Sincronización de CV completada con éxito.');
-        fileInput.value = '';
+        resetUploadUI();
     } catch (error) {
         showError(elements.uploadError, error.message);
     } finally {
-        btn.textContent = 'Subir y Encriptar';
+        btn.textContent = originalText;
         btn.disabled = false;
     }
 });
