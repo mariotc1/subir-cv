@@ -4,8 +4,11 @@ Verifica extensión, MIME type, magic bytes y contenido.
 """
 import os
 import re
+import io
 from pathlib import Path
 from fastapi import UploadFile, HTTPException, status
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 from app.config import get_settings
 from app.utils.logging import security_logger
 
@@ -42,7 +45,8 @@ async def validate_pdf_file(file: UploadFile) -> bytes:
     2. Content-Type application/pdf
     3. Magic bytes %PDF
     4. Tamaño máximo
-    5. No contiene patrones sospechosos
+    5. Estructura PDF válida (pypdf)
+    6. No contiene patrones sospechosos
     """
     # 1. Validar extensión
     if not file.filename:
@@ -102,7 +106,30 @@ async def validate_pdf_file(file: UploadFile) -> bytes:
             detail="El archivo no es un PDF válido"
         )
 
-    # 6. Buscar patrones sospechosos
+    # 6. Validar estructura PDF con pypdf
+    try:
+        # Usar BytesIO para que pypdf pueda leer desde memoria
+        pdf_file = io.BytesIO(content)
+        reader = PdfReader(pdf_file)
+        
+        # Verificar que tenga al menos una página
+        if len(reader.pages) < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El PDF no contiene páginas válidas"
+            )
+            
+        # Intentar acceder a la primera página para confirmar que es legible
+        _ = reader.pages[0]
+        
+    except (PdfReadError, Exception) as e:
+        security_logger.warning(f"Error al parsear estructura PDF: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El archivo está corrupto o no es un PDF válido"
+        )
+
+    # 7. Buscar patrones sospechosos
     for pattern in SUSPICIOUS_PATTERNS:
         if pattern.lower() in content.lower():
             security_logger.warning(
@@ -110,7 +137,7 @@ async def validate_pdf_file(file: UploadFile) -> bytes:
             )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El archivo contiene contenido no permitido"
+                detail="El archivo contiene contenido no permitido (scripts detectados)"
             )
 
     # Resetear posición del archivo para futuras lecturas
